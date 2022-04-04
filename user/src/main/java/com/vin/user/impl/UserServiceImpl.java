@@ -1,5 +1,6 @@
 package com.vin.user.impl;
 
+import com.vin.user.utils.JwtUtil;
 import com.vin.web.enums.HttpStates;
 import com.vin.web.model.ResponseModel;
 import com.vin.web.model.UserModel;
@@ -8,16 +9,28 @@ import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class UserServiceImpl implements UserService {
 
     private static final String AUTH_TOKEN = "x-auth-token";
+
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @Value("${custom.jwt.expire_time}")
+    private long expireTime;
 
     @Override
     public ResponseModel login(UserModel userModel) {
@@ -43,5 +56,18 @@ public class UserServiceImpl implements UserService {
     public ResponseModel testToken() {
 
         return ResponseModel.builder().message("获取到信息！").build();
+    }
+
+    @Override
+    public ResponseModel getToken() throws UnsupportedEncodingException {
+        String token = JwtUtil.sign("xsy", "123");
+        redisTemplate.opsForValue().set(token, token, expireTime * 2 / 100, TimeUnit.SECONDS);
+        return ResponseModel.success("Get token success!", token);
+    }
+
+    @Override
+    public ResponseModel test() {
+        System.out.println("进入测试，只有带有令牌才可以进入该方法");
+        return ResponseModel.success("访问接口成功", null);
     }
 }

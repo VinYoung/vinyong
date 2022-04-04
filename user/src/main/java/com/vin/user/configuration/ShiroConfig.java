@@ -37,7 +37,7 @@ public class ShiroConfig {
      * @param securityManager 安全管理器
      * @return {@link ShiroFilterFactoryBean}
      */
-    @Bean(name = "shiroFilter")
+    @Bean(name = "shiroFilterFactoryBean")
     public ShiroFilterFactoryBean shiroFilterFactoryBean(@Qualifier("securityManager") SecurityManager securityManager) {
         //创建拦截链实例
         ShiroFilterFactoryBean shiroFilterFactoryBean = new ShiroFilterFactoryBean();
