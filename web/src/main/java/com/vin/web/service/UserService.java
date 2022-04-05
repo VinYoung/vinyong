@@ -7,11 +7,9 @@ import java.io.UnsupportedEncodingException;
 
 public interface UserService {
 
-    public ResponseModel login(UserModel userModel);
+    public ResponseModel loginWithoutToken(UserModel userModel) throws UnsupportedEncodingException;
 
-    public ResponseModel testToken();
-
-    public ResponseModel getToken() throws UnsupportedEncodingException;
+    public ResponseModel getToken(UserModel user) throws UnsupportedEncodingException;
 
     public ResponseModel test();
 }

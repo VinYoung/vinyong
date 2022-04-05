@@ -1,7 +1,7 @@
 server:
   port: 8080
   servlet:
-    context-path: /sevenhee
+    context-path: /vinyoung
 
 spring:
   datasource:
@@ -24,9 +24,16 @@ spring:
     timeout: 2000ms
   cache:
     type: redis
-
-#自定义属性
+  mvc:
+    pathmatch:
+      matching-strategy: ant-path-matcher
+  mybatis:
+    configuration:
+      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 custom:
   jwt:
     tokenHeader: SevenHee-Token
     expire_time: 1800000
+
+
+

@@ -1,8 +1,13 @@
 package com.vin.user.shiro;
 
+import com.vin.data.mapper.IUserDao;
 import com.vin.user.token.JwtToken;
 import com.vin.user.utils.JwtUtil;
+import com.vin.web.enums.UserStatus;
+import com.vin.web.model.UserModel;
 import lombok.SneakyThrows;
+import lombok.extern.log4j.Log4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
@@ -28,7 +33,11 @@ import java.util.concurrent.TimeUnit;
  * @date 2021/03/30 16:52:06
  */
 @Component
+@Log4j
 public class ShiroRealm extends AuthorizingRealm {
+
+    @Autowired
+    private IUserDao iUserDao;
 
     @Autowired
     private RedisTemplate redisTemplate;
@@ -59,14 +68,21 @@ public class ShiroRealm extends AuthorizingRealm {
      */
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principalCollection) {
+
         //权限认证
-        System.out.println("开始进行权限认证.............");
+        log.info("开始进行权限认证...");
         //获取用户名
         String token = (String) SecurityUtils.getSubject().getPrincipal();
         String username = JwtUtil.getUsername(token);
         //模拟数据库校验,写死用户名xsy，其他用户无法登陆成功
-        if (!"xsy".equals(username)) {
-            return null;
+        UserModel user = new UserModel();
+        user.setUserName(username);
+        user = iUserDao.selectByUserName(user);
+        if (user == null) {
+            throw new AuthenticationException("用户不存在！");
+        }
+        if (!UserStatus.STATUS_0.getStateCode().equals(user.getStatus())) {
+            throw new AuthenticationException("用户已过期！");
         }
         //创建授权信息
         SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
@@ -84,22 +100,24 @@ public class ShiroRealm extends AuthorizingRealm {
     @SneakyThrows
     @Override
     protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authenticationToken) throws AuthenticationException {
-        System.out.println("开始身份认证.....................");
+        log.info("开始身份认证.");
         //获取token
         String token = (String) authenticationToken.getCredentials();
         //创建字符串，存储用户信息
-        String username = null;
+        String userName = null;
+        String password = null;
         try {
-            //获取用户名
-            username = JwtUtil.getUsername(token);
+            //获取用户名和密码
+            userName = JwtUtil.getUsername(token);
+            password = JwtUtil.getPassword(token);
         } catch (AuthenticationException e) {
-            throw new AuthenticationException("heard的token拼写错误或者值为空");
+            throw new AuthenticationException("heard的token拼写错误或者值为空！");
         }
-        if (username == null) {
+        if (StringUtils.isEmpty(userName)) {
             throw new AuthenticationException("token无效");
         }
         // 校验token是否超时失效 & 或者账号密码是否错误
-        if (!jwtTokenRefresh(token, username, "123")) {
+        if (!jwtTokenRefresh(token, userName, password)) {
             throw new AuthenticationException("Token失效，请重新登录!");
         }
         //返回身份认证信息

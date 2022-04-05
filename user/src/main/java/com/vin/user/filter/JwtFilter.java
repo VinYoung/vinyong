@@ -37,7 +37,8 @@ public class JwtFilter extends BasicHttpAuthenticationFilter implements Filter {
     @Override
     protected boolean executeLogin(ServletRequest request, ServletResponse response) throws IOException {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-        String token = httpServletRequest.getHeader("SevenHee-Token");
+        //设置使用的token请求名
+        String token = httpServletRequest.getHeader("x-auth-token");
         JwtToken jwtToken = new JwtToken(token);
         // 提交给realm进行登入，如果错误他会抛出异常并被捕获
         try {

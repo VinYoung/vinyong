@@ -1,30 +1,30 @@
 package com.vin.user.impl;
 
+import com.vin.data.mapper.IUserDao;
 import com.vin.user.utils.JwtUtil;
 import com.vin.web.enums.HttpStates;
 import com.vin.web.model.ResponseModel;
 import com.vin.web.model.UserModel;
 import com.vin.web.service.UserService;
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authc.AuthenticationException;
-import org.apache.shiro.authc.UsernamePasswordToken;
-import org.apache.shiro.subject.Subject;
+import lombok.extern.log4j.Log4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Component
+@Log4j
 public class UserServiceImpl implements UserService {
 
     private static final String AUTH_TOKEN = "x-auth-token";
+
+    @Autowired
+    private IUserDao iUserDao;
 
     @Autowired
     private RedisTemplate redisTemplate;
@@ -33,36 +33,26 @@ public class UserServiceImpl implements UserService {
     private long expireTime;
 
     @Override
-    public ResponseModel login(UserModel userModel) {
+    public ResponseModel loginWithoutToken(UserModel user) throws UnsupportedEncodingException {
 
-        UsernamePasswordToken token = new UsernamePasswordToken(userModel.getUserName(), userModel.getPassword());
+        log.info("登录开始：" + user.getUserName());
+        return getToken(user);
+    }
 
-        try {
-            SecurityUtils.getSubject().login(token);
-        } catch (AuthenticationException e) {
-            return ResponseModel.error(HttpStates.STATES_401, "权限不足！", null);
+    @Override
+    public ResponseModel getToken(UserModel user) throws UnsupportedEncodingException {
+
+        log.info("校验用户：" + user.getUserName());
+        int count = iUserDao.select(user);
+        if (count == 0) {
+            return ResponseModel.error(HttpStates.STATES_404, "用户名或密码错误！");
         }
-
-        Subject subject = SecurityUtils.getSubject();
-        Serializable tokenId = subject.getSession().getId();
-
-        Map<String, String> resultMap = new HashMap<>();
-        resultMap.put(AUTH_TOKEN, String.valueOf(tokenId));
-
-        return ResponseModel.success("登录成功！", resultMap);
-    }
-
-    @Override
-    public ResponseModel testToken() {
-
-        return ResponseModel.builder().message("获取到信息！").build();
-    }
-
-    @Override
-    public ResponseModel getToken() throws UnsupportedEncodingException {
-        String token = JwtUtil.sign("xsy", "123");
+        log.info("获取token：" + user.getUserName());
+        String token = JwtUtil.sign(user.getUserName(), user.getPassword());
         redisTemplate.opsForValue().set(token, token, expireTime * 2 / 100, TimeUnit.SECONDS);
-        return ResponseModel.success("Get token success!", token);
+        Map<String, Object> result = new HashMap<>();
+        result.put(AUTH_TOKEN, token);
+        return ResponseModel.success("Login success!", result);
     }
 
     @Override

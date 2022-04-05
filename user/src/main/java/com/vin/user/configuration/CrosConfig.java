@@ -9,7 +9,7 @@ import org.springframework.web.filter.CorsFilter;
 /**
  * 跨域访问配置类
  */
-//@Configuration
+@Configuration
 public class CrosConfig {
 
     private CorsConfiguration buildConfig() {
@@ -23,7 +23,7 @@ public class CrosConfig {
         return corsConfiguration;
     }
 
-//    @Bean
+    @Bean
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         // 对接口配置跨域设置

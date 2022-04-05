@@ -63,6 +63,20 @@ public class JwtUtil {
     }
 
     /**
+     * 获得token中的信息无需secret解密也能获得
+     *
+     * @return token中包含的密码
+     */
+    public static String getPassword(String token) {
+        try {
+            DecodedJWT jwt = JWT.decode(token);
+            return jwt.getClaim("password").asString();
+        } catch (JWTDecodeException e) {
+            return null;
+        }
+    }
+
+    /**
      * 生成token签名EXPIRE_TIME 分钟后过期
      *
      * @param username 用户名(电话号码)

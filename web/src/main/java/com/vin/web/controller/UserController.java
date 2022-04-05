@@ -5,36 +5,29 @@ import com.vin.web.model.UserModel;
 import com.vin.web.service.UserService;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.UnsupportedEncodingException;
 
 @RestController
-@RequestMapping("/shiro")
+@RequestMapping("/user")
 public class UserController {
 
     @Autowired
     UserService uerService;
 
-    @PostMapping("/login")
-    public ResponseModel login(UserModel userModel) {
+    @PostMapping("/loginWithoutToken")
+    public ResponseModel login(@RequestBody UserModel userModel) throws UnsupportedEncodingException {
 
-        return uerService.login(userModel);
+        return uerService.loginWithoutToken(userModel);
     }
 
-    @GetMapping("/testtoken")
-    public ResponseModel login() {
-
-        return uerService.testToken();
-    }
-
-
-    @RequestMapping("/getToken")
-    public ResponseModel getToken() throws UnsupportedEncodingException {
-        return uerService.getToken();
+    @PostMapping("/getToken")
+    public ResponseModel getToken(@RequestBody UserModel user) throws UnsupportedEncodingException {
+        return uerService.getToken(user);
     }
 
     @RequiresPermissions("user:admin")
